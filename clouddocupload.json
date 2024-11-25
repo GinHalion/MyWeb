@@ -1,9 +1,14 @@
 [
 	{
-		"last_version_name":"1.0.0.2",
-		"last_version_code":"3",
+		"last_version_name":"1.0.0.3",
+		"last_version_code":"4",
 		"download_link":"http:\/\/vip.ii90099.com\/subproject\/weup\/uploads\/apks\/CloudDocs.apk",
 		"update_log":[
+			{
+				"version_name":"1.0.0.3",
+				"version_code":"4",
+				"content":"新增直链获取文档内容功能，新增VIP功能，更新可单独开启文档加密{br}优化了部分代码，调整部分UI布局"
+			},
 			{
 				"version_name":"1.0.0.2",
 				"version_code":"3",
