@@ -1,28 +1,33 @@
 [
 	{
-		"last_version_name":"1.0.0.3",
-		"last_version_code":"4",
-		"download_link":"http:\/\/vip.ii90099.com\/subproject\/weup\/uploads\/apks\/CloudDocs.apk",
+		"last_version_name":"1.0.0.4",
+		"last_version_code":"5",
+		"download_link":"http://wp.lanlt.cn/down.php/a1c5751dfe173fd204e84ee40f1f87aa.apk",
 		"update_log":[
+			{
+				"version_name":"1.0.0.4",
+				"version_code":"5",
+				"content":"新增切换线路，新增公告列表{br}优化软件初始化和部分代码，部分地方稍作改动，公告改为一次性公告，有新公告会显示。"
+			},
 			{
 				"version_name":"1.0.0.3",
 				"version_code":"4",
-				"content":"新增直链获取文档内容功能，新增VIP功能，更新可单独开启文档加密{br}优化了部分代码，调整部分UI布局"
+				"content":"新增直链获取文档内容功能，新增VIP功能，更新可单独开启文档加密{br}优化了部分代码，调整部分UI布局。"
 			},
 			{
 				"version_name":"1.0.0.2",
 				"version_code":"3",
-				"content":"新增搜索功能和其他小功能{br}优化了部分代码"
+				"content":"新增搜索功能和其他小功能{br}优化了部分代码。"
 			},
 			{
 				"version_name":"1.0.0.1",
 				"version_code":"2",
-				"content":"更新了软件Logo{br}优化了部分代码"
+				"content":"更新了软件Logo{br}优化了部分代码。"
 			},
 			{
 				"version_name":"1.0.0",
 				"version_code":"1",
-				"content":"该版本构建了软件基础功能{br}加载、新建、登录 ..."
+				"content":"该版本构建了软件基础功能{br}加载、新建、登录..."
 			}
 		]
 	}
