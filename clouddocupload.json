@@ -1,9 +1,14 @@
 [
 	{
-		"last_version_name":"1.0.0.4",
-		"last_version_code":"5",
-		"download_link":"http://wp.lanlt.cn/down.php/a1c5751dfe173fd204e84ee40f1f87aa.apk",
+		"last_version_name":"1.0.0.5",
+		"last_version_code":"6",
+		"download_link":"http://wp.lanlt.cn/down.php/113fa56af74f1f227acae33b78df9e7a.apk",
 		"update_log":[
+			{
+				"version_name":"1.0.0.5",
+				"version_code":"6",
+				"content":"新增文件储存{br}部分代码稍作优化改动。"
+			},
 			{
 				"version_name":"1.0.0.4",
 				"version_code":"5",
