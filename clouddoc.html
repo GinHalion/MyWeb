@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudDocs - 使用文档</title>
+	<style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .code-block {
+            position: relative;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin: 8px 0;
+            padding: 15px;
+            
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap; /* 允许换行 */
+            overflow-wrap: break-word; /* 允许长单词折行 */
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 15px;
+			top: 25px;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .copy-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* 提示信息样式 */
+        .notification {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+            opacity: 0;
+            animation: slideUp 0.5s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            0% {
+                transform: translate(-50%, 50px);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -50%);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 提示信息 -->
+        <div class="notification" id="notification"></div>
+
+        <!-- 代码块1 -->
+        <div class="code-block">
+			<p>GET请求获取云文档示例</p>
+            <button class="copy-btn" onclick="copyToClipboard(this)">复制代码</button>
+            <pre><code class="language-lua">require "import"
+require "http"
+local cjson = require "cjson"
+
+function Base64Decrypt(data)
+  local Base64 = luajava.bindClass("android.util.Base64")
+  local success, result = pcall(function()
+    return String(Base64.decode(data, Base64.DEFAULT)).toString()
+  end)
+  if success then
+    return result
+   else
+    return false
+  end
+end
+
+function mDecrypt(content, key)
+  local String = luajava.bindClass "java.lang.String"
+  local SecretKeySpec = luajava.bindClass "javax.crypto.spec.SecretKeySpec"
+  local Cipher = luajava.bindClass "javax.crypto.Cipher"
+  local Base64 = luajava.bindClass "android.util.Base64"
+  local skey = SecretKeySpec(String(key).getBytes(), "AES")
+  local cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
+  cipher.init(Cipher.DECRYPT_MODE, skey)
+  local encode_content = Base64.decode(content,Base64.DEFAULT)
+  local byte_content = cipher.doFinal(encode_content)
+  return String(byte_content,"UTF-8")
+end
+
+function isBase64(content)
+  local content = string.match(content, "^%s*(.-)%s*$")
+  local base64_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+  for i = 1, #content do
+    local char = content:sub(i, i)
+    if not base64_charset:find(char) then
+      return false
+    end
+  end
+  local padding_count = content:match("=*$"):len()
+  return padding_count <= 2 and (#content + padding_count) % 4 == 0
+end
+
+function isEncryptedByAES(content, key)
+  if not isBase64(content) then
+    return false
+  end
+  local decoded_content = luajava.bindClass("android.util.Base64").decode(content, luajava.bindClass("android.util.Base64").DEFAULT)
+  if #decoded_content % 16 ~= 0 then return false end
+  local status, result = pcall(function() return mDecrypt(content, key) end)
+  if status then
+    return true and #result > 0
+  end
+  return false
+end
+
+function handleDirectLinkContent(content, key)
+  if #key ~= 16 then
+    print("密钥不规范")
+    return
+  end
+  if isEncryptedByAES(content, key) then
+    local decryptedContent = Base64Decrypt(mDecrypt(content, key)) -- 解密直链文档内容
+    print(decryptedContent) -- 输出解密后的直链文档内容
+   else
+    print(content) -- 输出未加密的直链文档内容
+  end
+end
+
+function handleDocumentContent(data, key)
+  if type(data) ~= "table" then
+    print("内容格式错误:", data)
+    return
+  end
+  local noteTitle = data.notetitle
+  local noteContent = data.notecontent
+  local backCipher = tointeger(data.ciphertext)
+  if backCipher == 1 then
+    if #key ~= 16 then
+      print("密钥不规范")
+      return
+    end
+    if isEncryptedByAES(noteContent, key) then
+      local decryptedTitle = Base64Decrypt(mDecrypt(noteTitle, key)) -- 解密文档标题
+      local decryptedContent = Base64Decrypt(mDecrypt(noteContent, key)) -- 解密文档内容
+      print(decryptedTitle, decryptedContent) -- 输出解密后的文档标题和内容
+    end
+   elseif backCipher == 0 then
+    print(noteTitle, noteContent) -- 输出未加密的文档标题和内容
+   else
+    print("未知的加密状态:", backCipher)
+  end
+end
+
+function GetNote(url, key)
+  Http.get(url, nil, nil, nil, function(code, content, cookie, header)
+    -- 检查网络请求响应码
+    if code ~= 200 or not content then
+      print("Network error: " .. code)
+      return
+    end
+    -- 尝试解析 JSON 内容
+    local success, result = pcall(cjson.decode, content)
+    if not success then
+      handleDirectLinkContent(content, key) -- 处理直链内容
+      return
+    end
+    -- 处理解析后的内容
+    local backcode = tointeger(result.code)
+    local backmsg = result.msg
+    if backcode == 2 then
+      handleDocumentContent(result.data, key) -- 处理文档内容
+     else
+      print(backmsg) -- 输出错误信息
+    end
+  end)
+end
+
+-- 文档直链
+local Url = "http://ginwebs.freemyip.com:81/subproject/cloudnote/getnotedirect.php?username=admin&amp;noteid=14&amp;type=1"
+
+-- 加密Key
+local AppKey = "wrQenNFVF6slcyeN"
+
+-- GET请求获取云文档内容
+GetNote(Url, AppKey)
+
+</code></pre>
+        </div>
+
+        <!-- 代码块2 -->
+        <div class="code-block">
+			<p>POST请求获取云文档示例</p>
+            <button class="copy-btn" onclick="copyToClipboard(this)">复制代码</button>
+            <pre><code class="language-lua">require "import"
+require "http"
+local cjson = require "cjson"
+
+function Base64Decrypt(data)
+  local Base64 = luajava.bindClass("android.util.Base64")
+  local success, result = pcall(function()
+    return String(Base64.decode(data, Base64.DEFAULT)).toString()
+  end)
+  if success then
+    return result
+   else
+    return false
+  end
+end
+
+function mDecrypt(content, key)
+  local String = luajava.bindClass "java.lang.String"
+  local SecretKeySpec = luajava.bindClass "javax.crypto.spec.SecretKeySpec"
+  local Cipher = luajava.bindClass "javax.crypto.Cipher"
+  local Base64 = luajava.bindClass "android.util.Base64"
+  local skey = SecretKeySpec(String(key).getBytes(), "AES")
+  local cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
+  cipher.init(Cipher.DECRYPT_MODE, skey)
+  local encode_content = Base64.decode(content,Base64.DEFAULT)
+  local byte_content = cipher.doFinal(encode_content)
+  return String(byte_content,"UTF-8")
+end
+
+function isBase64(content)
+  local content = string.match(content, "^%s*(.-)%s*$")
+  local base64_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+  for i = 1, #content do
+    local char = content:sub(i, i)
+    if not base64_charset:find(char) then
+      return false
+    end
+  end
+  local padding_count = content:match("=*$"):len()
+  return padding_count <= 2 and (#content + padding_count) % 4 == 0
+end
+
+function isEncryptedByAES(content, key)
+  if not isBase64(content) then
+    return false
+  end
+  local decoded_content = luajava.bindClass("android.util.Base64").decode(content, luajava.bindClass("android.util.Base64").DEFAULT)
+  if #decoded_content % 16 ~= 0 then return false end
+  local status, result = pcall(function() return mDecrypt(content, key) end)
+  if status then
+    return true and #result > 0
+  end
+  return false
+end
+
+-- 处理后端响应
+function handleResponse(result, key)
+  local backcode = result.code
+  local backmsg = result.msg
+  if backcode == 2 then
+    handleNoteContent(result.data, key) -- 处理文档内容
+   else
+    print(backmsg) -- 输出错误信息
+  end
+end
+
+-- 处理文档内容
+function handleNoteContent(data, key)
+  local cipher = data.ciphertext
+  local noteTitle = data.notetitle
+  local noteContent = data.notecontent
+  if cipher == 1 and isEncryptedByAES(noteContent, key) then -- 判断加密状态
+    local decryptedTitle = Base64Decrypt(mDecrypt(noteTitle, key)) -- 解密文档标题
+    local decryptedContent = Base64Decrypt(mDecrypt(noteContent, key)) -- 解密文档内容
+    print(decryptedTitle, decryptedContent) -- 输出解密后的文档标题和内容
+   else
+    print(noteTitle, noteContent) -- 输出未加密的文档标题和内容
+  end
+end
+
+function PostNote(url, username, noteid, key)
+  local postData = {
+    ["username"] = tostring(username),
+    ["noteid"] = tostring(noteid)
+  }
+  Http.post(url, postData, nil, nil, nil, function(code, content, cookie, header)
+    -- 检查网络请求响应码
+    if code ~= 200 or not content then
+      print("Network error: " .. code)
+      return
+    end
+    -- 尝试解析 JSON 内容
+    local success, result = pcall(cjson.decode, content)
+    if not success then
+      print("数据解析失败")
+      return
+    end
+    -- 处理解析后的内容
+    handleResponse(result, key)
+  end)
+end
+
+-- 文档直链
+local Url = "http://ginwebs.freemyip.com:81/subproject/cloudnote/getnote.php"
+--用户名
+local UserName = "admin"
+-- 文档ID
+local NoteID = "14"
+-- 加密Key
+local AppKey = "wrQenNFVF6slcyeN"
+
+-- GET请求获取云文档内容
+PostNote(Url, UserName, NoteID, AppKey)
+</code></pre>
+        </div>
+
+        <!-- 代码块3 -->
+        <div class="code-block">
+			<p>两者对比</p>
+            <button class="copy-btn" onclick="copyToClipboard(this)">复制代码</button>
+            <pre><code class="language-lua">简单说一下
+1.GET请求获取(直链,可直接访问)需要VIP, 但POST请求获取无需VIP.
+2.直链访问可以撰写静态网页内容, 比如HTML+JavaScript等等, 只需要将内容写入后将文档加密关闭即可!
+3.POST请求获取文档功能永久免费, 会员售卖价格可能会随着节假日随机打折优惠, 需要的不要错过哦!
+总结: GET请求需VIP, POST请求永久免费, 两者皆可获取文档内容.
+我们承诺用户永远不, 如若出现BUG和线路失效等, 我们会第一时间修复.
+为了您更长久更稳定的使用该程序, 请支援我们, 谢谢！
+为了不影响用户使用体验, 本程序暂不开设单独支援通道, 用户购买VIP就代表了您对我们的支持!
+再次感谢您对我们的支持!
+
+问题交流:
+逍遥阁官方QQ群: 682277760
+</code></pre>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(button) {
+            // 获取按钮所在的代码块
+            const codeBlock = button.parentElement;
+            // 获取 <code> 标签中的文本内容
+            const codeText = codeBlock.querySelector('code').textContent;
+
+            // 创建一个临时的文本区域
+            const textarea = document.createElement('textarea');
+            textarea.value = codeText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            // 显示复制成功的提示信息
+            showNotification('代码已复制到剪贴板');
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message; // 设置通知内容
+            notification.style.display = 'block'; // 显示通知
+            notification.style.animation = 'slideUp 0.5s ease-out forwards'; // 添加动画
+
+            // 过一段时间后隐藏提示信息
+            setTimeout(() => {
+                notification.style.opacity = 0; // 动画结束前使其透明
+                setTimeout(() => {
+                    notification.style.display = 'none'; // 完全消失
+                }, 500); // 等待动画结束后再隐藏
+            }, 2000); // 显示2秒
+        }
+    </script>
+</body>
+</html>
