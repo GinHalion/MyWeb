@@ -2,6 +2,13 @@
   "code":2,
   "data":[
   {
+    "noticeid":3,
+    "noticetitle":"官方通知",
+    "noticecontent":"新手如何使用云文档，如何获取文档内容？不要急！官方已经发布了使用文档。\n\nhttps://ginhalion.github.io/MyWeb/clouddoc.html",
+    "noticeshow":true,
+    "noticetime":"2024-12-23"
+  },
+  {
     "noticeid":2,
     "noticetitle":"官方通知",
     "noticecontent":"对于小人的恶意攻击服务器行为，我们做了以下措施：\n\n1、更新多线路，不同线路对应不同域名，因使用的数据转发域名非本人所有，所以非官方线路可能随时失效，若用户使用远程获取，强烈推荐使用官方线路！\n2、使用第三方储存资源，如：图片等文件。",
